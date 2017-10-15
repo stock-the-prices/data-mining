@@ -1,0 +1,47 @@
+swagger: "2.0"
+
+info:
+    title: "Stock Data Mining"
+    version: "1.0"
+
+basePath: /v1.0
+
+paths:
+    /stock/:
+        post:
+            # operationId: api.room.class_instance.post
+            parameters:
+                -   in: body
+                    name: stock
+                    required: true
+                    schema:
+                        $ref: '#/definitions/Stock'
+            responses:
+                '202':
+                    description: 'Mine data about stock'
+#          schema:
+#            $ref: '#/definitions/Stock'        
+
+definitions:
+    Stock:
+        type: object
+        required:
+            - id
+        properties:
+            id:
+                type: string
+            noArticles:
+                type: number
+                format: int64
+    #         interval:
+    #             $ref: '#/definitions/Interval'
+
+    # Interval:
+    #     type: object
+    #     required:
+    #         - start
+    #         - end
+    #     properties:
+    #         start: string
+    #         end: string
+    

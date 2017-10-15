@@ -1,0 +1,30 @@
+---
+version: "2"
+
+services:
+    app:
+        build: .
+        environment:
+            - MODE=dev
+            
+            # VM IP
+            - DATA_MINER_HOST=192.168.99.100
+            - DATA_MINER_PORT=9090
+
+            # VM IP
+            - MONGODB_HOST=192.168.99.100
+            - MONGODB_PORT=27017
+        volumes:
+            - .:/code
+        depends_on:
+            - mongodb
+        ports:
+            # maps container port to host port (VM), which maps to some port on your mac
+            - "9090:9090"
+        
+    mongodb:
+        image: mongo:latest
+        command: --smallfiles
+        ports:
+            # maps container port to host port (VM), which maps to some port on your mac
+            - 27017:27017
