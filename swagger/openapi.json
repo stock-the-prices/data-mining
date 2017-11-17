@@ -1,0 +1,101 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Data Mining Microservice API",
+        "description": "This microservice is responsible for mining and updating stock data.",
+        "version": "1.0.0"
+    },
+    "schemes": [
+        "https"
+    ],
+    "basePath": "/v1.0",
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+      "/stock/{stock_id}": {
+        "put": {
+            "summary": "Mine and update data of a stock specified by the stock id.",
+            "description": "Given data on which stock to mine, the number of articles to search for, and other parameters,this endpoint mines for the data and update the record in the DB for said stock.",
+            "parameters": [
+            {
+                "name": "stock_id",
+                "in": "path",
+                "description": "The id of the stock to update.",
+                "required": true,
+                "type": "string"            
+            },
+            {
+                "name": "mining_info",
+                "in": "body",
+                "description": "The desired mining info for said stock.",
+                "required": false,
+                "schema": {
+                    "$ref": "#/definitions/MiningInfo"
+                }
+            }
+          ],
+          "tags": [
+            "Mine stock data"
+          ],
+          "responses": {
+            "202": {
+                "description": "Occurrs async."
+            },
+            "default": {
+                "description": "Unexpected error",
+                "schema": {
+                    "$ref": "#/definitions/Error"
+                }
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "MiningInfo": {
+        "properties": {
+            "numArticlesToMine": {
+                "type": "integer",
+                "format": "int32",
+                "description": "The number of articles to mine."
+            },
+            "startDate": {
+                "type": "string",
+                "description": "Mine articles published on or after said date (YYYY-MM-DD"
+            },
+
+            "endDate": {
+                "type": "string",
+                "description": "Mine articles published on or after said date (YYYY-MM-DD"
+            },
+            "numArticlesToDeprecate": {
+                "type": "integer",
+                "format": "int32",                
+                "description": "The number of articles to deprecate."
+            },
+            "priceModelType": {
+                "type": "string",
+                "description": "The type of model used in predicting the price of the stock."
+            }
+        }
+      },
+      "Error": {
+        "properties": {
+            "code": {
+                "type": "integer",
+                "format": "int32"
+            },
+            "message": {
+                "type": "string"
+            },
+            "fields": {
+                "type": "string"
+            }
+        }
+      }
+    }
+  }
