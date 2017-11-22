@@ -5,6 +5,7 @@ from services.sentiment import Sentiment
  
 import logging
 import pprint
+import json
 
 @inject
 def put(db_connection: DBConnection, news: News, sentiment: Sentiment, stock_id: str, mining_info: dict) -> list:
@@ -29,4 +30,5 @@ def put(db_connection: DBConnection, news: News, sentiment: Sentiment, stock_id:
     # conenct to DB
     # db_connection.connect()
     # db_connection.update_record(stock_id)
-    return mining_info
+
+    return json.dumps(articles, sort_keys=True, indent=4, separators=(',', ': '))

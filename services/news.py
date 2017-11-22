@@ -27,5 +27,6 @@ class News(object):
             if r.status_code == 200:
                 raw_articles = r.json()['articles']
                 articles += raw_articles[:min(num_articles - len(articles), 20)]
+            # else throw
 
         return articles
