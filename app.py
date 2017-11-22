@@ -19,9 +19,13 @@ config = {}
 CONFIG_PATH = 'config/config.json'
 SWAGGER_PATH = 'swagger/'
 
+DEFAULT_PORT = 9090
+
 def load_env():
-    env['SERVER_HOST'] = os.environ['DATA_MINER_HOST']
-    env['SERVER_PORT'] = os.environ['DATA_MINER_PORT']
+    PORT = DEFAULT_PORT
+    if "PORT" in os.environ:
+        PORT = os.environ['PORT']
+    env['SERVER_PORT'] = PORT
 
     env['MONGODB_HOST'] = os.environ['MONGODB_HOST']
     env['MONGODB_PORT'] = int(os.environ['MONGODB_PORT'])
