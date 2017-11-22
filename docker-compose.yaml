@@ -5,15 +5,7 @@ services:
     app:
         build: .
         environment:
-            - MODE=dev
-            
-            # VM IP
-#            - DATA_MINER_HOST=192.168.99.100
-#            - DATA_MINER_PORT=9090
-
-            # VM IP
-#           - MONGODB_HOST=192.168.99.100
-#            - MONGODB_PORT=27017
+            - DEPLOY_MODE=prod
         volumes:
             - .:/code
         depends_on:

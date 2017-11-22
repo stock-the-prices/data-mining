@@ -5,13 +5,12 @@ from services.sentiment import Sentiment
  
 import logging
 import pprint
-import json
 
 @inject
 def put(db_connection: DBConnection, news: News, sentiment: Sentiment, stock_id: str, mining_info: dict) -> list:
     # parameter to handler "injected", easier to test, and seperation of concerns
-    logging.info("stock_id: %s", stock_id)
-    logging.info("mining_info:\n%s", pprint.pformat(mining_info, 4))
+    logging.info("Stock id: %s", stock_id)
+    logging.info("Mining info:\n%s", pprint.pformat(mining_info, 4))
 
     # get keywords
     query = stock_id
@@ -23,12 +22,12 @@ def put(db_connection: DBConnection, news: News, sentiment: Sentiment, stock_id:
 
     for article in articles:
         # TODO introduce domain object to create layer of abtraction to response
-        article['sentiment'] = sentiment.analyze(article['description'])    # TODO introduce domain object for sentiment
+        text = article['title'] if article['description'] is None else article['description']
+        article['sentiment'] = sentiment.analyze(text)    # TODO introduce domain object for sentiment
 
     logging.info("articles:\n%s", pprint.pformat(articles, 4))
 
     # conenct to DB
-    # db_connection.connect()
-    # db_connection.update_record(stock_id)
-
-    return json.dumps(articles, sort_keys=True, indent=4, separators=(',', ': '))
+    db_connection.connect()
+    stock_record = db_connection.update_record(stock_id, articles)
+    return {'stock': stock_record['_id'], 'updated': str(stock_record['date_updated'])}

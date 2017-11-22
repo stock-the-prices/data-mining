@@ -14,9 +14,10 @@ class Sentiment(object):
     def analyze(self, text: str) -> dict:
         payload = self.create_payload(text)
         r = requests.post(self.url, data=payload)
-            
+        
         if r.status_code == 200:
             sentiment = r.json()
-        
-        return sentiment
+            return sentiment
+    
+        return {}
         # throw

@@ -42,8 +42,8 @@
             "Mine stock data"
           ],
           "responses": {
-            "202": {
-                "description": "Occurrs async."
+            "200": {
+                "description": "Updated stock records."
             },
             "default": {
                 "description": "Unexpected error",

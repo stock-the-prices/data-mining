@@ -12,35 +12,25 @@ import pprint
 import logging
 import json
 import os
+from collections import defaultdict
 
-env = {}
-config = {}
+CONFIG = defaultdict()
 
 CONFIG_PATH = 'config/config.json'
 SWAGGER_PATH = 'swagger/'
 
-DEFAULT_PORT = 9090
-
-def load_env():
-    PORT = DEFAULT_PORT
-    if "PORT" in os.environ:
-        PORT = os.environ['PORT']
-    env['SERVER_PORT'] = PORT
-
-    env['MONGODB_HOST'] = os.environ['MONGODB_HOST']
-    env['MONGODB_PORT'] = int(os.environ['MONGODB_PORT'])
-
-    env['NEWS_API_KEY'] = os.environ['NEWS_API_KEY']
-
-    logging.info("env:\n%s", pprint.pformat(env, 4))
-    
-
+DEPLOY_MODE_ENV_NAME = 'DEPLOY_MODE'
+PORT_ENV_NAME = 'PORT'
 
 def load_config():
     with open(CONFIG_PATH) as config_json:
-        config.update(json.load(config_json))
+        temp = json.load(config_json)
+        CONFIG.update(temp[os.environ[DEPLOY_MODE_ENV_NAME]])
+
+        if PORT_ENV_NAME in os.environ:
+            CONFIG['server']['port'] = int(os.environ[PORT_ENV_NAME])
     
-    logging.info("config:\n%s", pprint.pformat(config, 4))
+    logging.info("config:\n%s", pprint.pformat(CONFIG, 4))
 
 
 def configure_logger():
@@ -55,28 +45,39 @@ def configure(binder: Binder) -> Binder:
     # dependency injection
     binder.bind(                # bind(interface, implementation)
         DBConnection,
-        MongoDBConnection(env['MONGODB_HOST'], env['MONGODB_PORT'])
+        MongoDBConnection(CONFIG['db']['host'],
+                          CONFIG['db']['port'],
+                          CONFIG['db']['dbName'],
+                          CONFIG['db']['user'],
+                          CONFIG['db']['passwd']
+                          )
     )
 
     binder.bind(                # bind(interface, implementation)
         News,
-        News(env['NEWS_API_KEY'], config['news']['url'], config['news']['resultsPerPage'])
+        News(CONFIG['external']['news']['apiKey'],
+             CONFIG['external']['news']['host'],
+             CONFIG['external']['news']['resultsPerPage']
+            )
     )
 
     binder.bind(                # bind(interface, implementation)
         Sentiment,
-        Sentiment(config['sentiment']['url'])
+        Sentiment(CONFIG['external']['sentiment']['host'])
     )
 
 def main():
     configure_logger()
-    load_env()
     load_config()
-    app = connexion.FlaskApp(__name__, port=env['SERVER_PORT'], specification_dir=SWAGGER_PATH)
-    app.add_api('openapi.json', resolver=RestyResolver('api')) # ('api_spec_file', 'api_defn_folder')
+    app = connexion.FlaskApp(__name__,
+                             port=CONFIG['server']['port'],
+                             specification_dir=SWAGGER_PATH
+                            )
+
+    app.add_api('openapi.json', resolver=RestyResolver('api')) # ('api_spec_file','api_defn_folder')
 
     FlaskInjector(app=app.app, modules=[configure])
-    app.run()
+    app.run(threaded=True)
 
 if __name__ == '__main__':
     main()
