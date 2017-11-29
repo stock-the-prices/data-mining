@@ -7,6 +7,7 @@ from connexion.resolver import RestyResolver
 from services.db import DBConnection, MongoDBConnection
 from services.news import News
 from services.sentiment import Sentiment
+from services.price import Price
 
 import pprint
 import logging
@@ -29,7 +30,7 @@ def load_config():
 
         if PORT_ENV_NAME in os.environ:
             CONFIG['server']['port'] = int(os.environ[PORT_ENV_NAME])
-    
+
     logging.info("config:\n%s", pprint.pformat(CONFIG, 4))
 
 
@@ -43,28 +44,32 @@ def configure_logger():
 
 def configure(binder: Binder) -> Binder:
     # dependency injection
+
+    # Database
     binder.bind(                # bind(interface, implementation)
         DBConnection,
         MongoDBConnection(CONFIG['db']['host'],
                           CONFIG['db']['port'],
                           CONFIG['db']['dbName'],
                           CONFIG['db']['user'],
-                          CONFIG['db']['passwd']
-                          )
-    )
+                          CONFIG['db']['passwd']))
 
+    # News
     binder.bind(                # bind(interface, implementation)
         News,
         News(CONFIG['external']['news']['apiKey'],
-             CONFIG['external']['news']['host'],
-             CONFIG['external']['news']['resultsPerPage']
-            )
-    )
+             CONFIG['external']['news']['host']))
 
+    # Sentiment
     binder.bind(                # bind(interface, implementation)
         Sentiment,
-        Sentiment(CONFIG['external']['sentiment']['host'])
-    )
+        Sentiment(CONFIG['external']['sentiment']['host']))
+
+    # Price
+    binder.bind(                # bind(interface, implementation)
+        Price,
+        Price(CONFIG['external']['price']['apiKey'],
+             CONFIG['external']['price']['host']))
 
 def main():
     configure_logger()

@@ -13,11 +13,14 @@
         "external": {
             "news": {
                 "host": "https://newsapi.org/v2/everything",
-                "apiKey": "e7e67041d3604b098c2668f349a1fadd",
-                "resultsPerPage": 20
+                "apiKey": "e7e67041d3604b098c2668f349a1fadd"
             },
             "sentiment": {
                 "host": "http://text-processing.com/api/sentiment/"
+            },
+            "price": {
+                "host": "https://www.alphavantage.co/query",
+                "apiKey": "ZXVY2KH66GDPXQ15"
             }
         }
     },
@@ -36,11 +39,14 @@
         "external": {
             "news": {
                 "host": "https://newsapi.org/v2/everything",
-                "apiKey": "e7e67041d3604b098c2668f349a1fadd",
-                "resultsPerPage": 20
+                "apiKey": "e7e67041d3604b098c2668f349a1fadd"
             },
             "sentiment": {
                 "host": "http://text-processing.com/api/sentiment/"
+            },
+            "price": {
+                "host": "https://www.alphavantage.co/query",
+                "apiKey": "ZXVY2KH66GDPXQ15"
             }
         }
     }

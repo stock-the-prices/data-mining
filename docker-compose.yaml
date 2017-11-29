@@ -5,7 +5,7 @@ services:
     app:
         build: .
         environment:
-            - DEPLOY_MODE=prod
+            - DEPLOY_MODE=dev
         volumes:
             - .:/code
         depends_on:

@@ -49,7 +49,7 @@ class MongoDBConnection(DBConnection):
     Facade for MongoDB client.
     Wraps the client and introduce business-logic specific methods.
     """
-    
+
     # Creates DBConnection
     def __init__(self, host: str, port: int, dbName: str, user: str, passwd: str):
         self.dbName = dbName
@@ -57,7 +57,7 @@ class MongoDBConnection(DBConnection):
         self.passwd = passwd
 
         super().__init__(host, port)
-        
+
     client = None
     db = None
 
@@ -77,39 +77,67 @@ class MongoDBConnection(DBConnection):
 
 
     def insert_new_stock(self, stock_id: str):
+        # schema
         new_stock = {
             "_id" : stock_id,
 	        "date_updated" : datetime.datetime.utcnow(),
 	        "articles" : [],
-            "prices" : [],
+            "prices" : {},
             "price_next_day" : None,
             "price_next_week" : None,
             "price_next_month" : None
         }
-        
+
         return self.db.stock.insert_one(new_stock).inserted_id
-                 
-    
-    def update_record(self, stock_id: str, new_articles: list):
-        # update record on DB
+
+
+    def update_record(self, stock_id: str, new_articles=None, new_pricing=None):
+        # update record on DB with articles
+        # article DNE: create article document -> insert into stock document
+        # OR article exists: if article linked to stock -> do nothing ELSE link to stock
+
         stocks = self.db.stock
         articles = self.db.article
 
         stock_query = {"_id": stock_id}
         record = stocks.find_one(stock_query)
+
+        # insert stock if necessary
         if record is None:
             self.insert_new_stock(stock_id)
             logging.warning("Inserted new stock record for %s", stock_id)
+            record = stocks.find_one(stock_query)
 
-        for art in new_articles:
-            logging.info("Processing article: %s", art['title'])
-            if articles.find_one({"title": art['title']}) is None:
-                a_id = articles.insert_one(art).inserted_id
-                logging.info("Inserted new article: %s", a_id)
+        if new_articles is not None:
+            # update articles
+            for art in new_articles:
+                logging.info("Processing article: %s", art['title'])
+                article_record = articles.find_one({"title": art['title']})
+                if article_record is None:
+                    # new article
+                    a_id = articles.insert_one(art).inserted_id
+                    logging.info("Inserted new article: %s", art['title'])
+                else:
+                    # old article
+                    a_id = article_record['_id']
+
+                    record = stocks.find_one(stock_query)
+                    if a_id in record['articles']:
+                        # article already in stock record
+                        continue
+
                 stocks.update_one(stock_query, {'$push': {'articles': a_id}})
-        
+                logging.info("Updated stock %s record with article: %s", stock_id, art['title'])
+
+        # update pricing
+        if new_pricing is not None:
+            stocks.update_one(stock_query, {'$set': {'prices': new_pricing}})
+            logging.info("Updated stock %s record with new pricing information")
+
+        # update stock updated time
         stocks.update_one(stock_query, {'$set': {"date_updated": datetime.datetime.utcnow()}})
-        updated_stock = stocks.find_one(stock_query) 
+
+        updated_stock = stocks.find_one(stock_query)
         logging.info("Updated stock:\n%s", pprint.pformat(updated_stock, 4))
-        # update time
+
         return updated_stock

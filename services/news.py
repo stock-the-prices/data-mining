@@ -4,11 +4,11 @@ import requests
 
 
 class News(object):
-    def __init__(self, api_key: str, article_search_url: str, results_per_page: int):
+    results_per_page = 20               # num articles per page of query results
+
+    def __init__(self, api_key: str, article_search_url: str):
         self.api_key = api_key
         self.article_search_url = article_search_url
-        self.results_per_page = results_per_page
-        
 
     def create_article_search_payload(self, q: str, start_date: str, end_date: str, page: int) -> dict:
         payload = {'apiKey': self.api_key, 'q': q, 'language': 'en', 'page': page}
