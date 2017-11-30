@@ -20,7 +20,7 @@ class Rating(object):
         total_neg = 0.0
         total_pos = 0.0
         for article in articles:
-            total_neg = total_neg - max(1.0, 1.5 * article['sentiment']['probability']['neg'])
+            total_neg = total_neg - max(1.0, 1.25 * article['sentiment']['probability']['neg'])
             total_pos = total_pos + article['sentiment']['probability']['pos']
 
         avg_sentiment_rating = (total_neg + total_pos)/len(articles)
@@ -49,4 +49,4 @@ class Rating(object):
 
         self.db_connection.close()
 
-        return (avg_sentiment_rating*0.8 + avg_price_rating*0.2)/(0.8 + 0.2)
+        return (avg_sentiment_rating*0.75 + avg_price_rating*0.25)/(0.75 + 0.25)

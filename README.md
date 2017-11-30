@@ -18,7 +18,7 @@ $ docker-compose down
 ```
 
 Prod
-* make sure DEPLOY_MODE is set to 'prod' in `docker-compose.yaml`
+* make sure DEPLOY_MODE is set to 'prod' in the deploy env
 * host at `http://data-mining-se390.herokuapp.com/v1.0/ui/`
 
 ```
