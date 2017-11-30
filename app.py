@@ -9,6 +9,7 @@ from services.news import News
 from services.sentiment import Sentiment
 from services.price import Price
 from services.prediction import Prediction
+from services.rating import Rating
 
 import pprint
 import logging
@@ -76,6 +77,15 @@ def configure(binder: Binder) -> Binder:
     binder.bind(                # bind(interface, implementation)
         Prediction,
         Prediction())
+
+    # Rating
+    binder.bind(                # bind(interface, implementation)
+        Rating,
+        Rating(MongoDBConnection(CONFIG['db']['host'],
+                                 CONFIG['db']['port'],
+                                 CONFIG['db']['dbName'],
+                                 CONFIG['db']['user'],
+                                 CONFIG['db']['passwd'])))
 
 def main():
     configure_logger()

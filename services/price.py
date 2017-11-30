@@ -2,7 +2,6 @@ import logging
 import pprint
 import requests
 
-from collections import defaultdict
 from enum import Enum
 
 class Price(object):
@@ -19,7 +18,7 @@ class Price(object):
     TIME_SERIES_DAILY_FIELD = 'Time Series (Daily)'
     TIME_SERIES_PRICE_FIELD = '4. close'
 
-    MAX_TRIES = 10
+    MAX_TRIES = 20
 
     def __init__(self, api_key: str, host: str):
         self.api_key = api_key
@@ -34,10 +33,10 @@ class Price(object):
 
 
     def get_historical_daily_prices(self, stock_id: str, is_complete: bool):
+        # returns list of objs {'date': date, 'price': price}
         payload = self.create_payload(stock_id, self.Function.TSERIES.value,
                                       self.ResultSize.FULL.value if is_complete else self.ResultSize.CMPT.value)
-
-        prices = defaultdict()
+        prices = []
 
         num_tries = 0
         while num_tries != self.MAX_TRIES:
@@ -53,7 +52,13 @@ class Price(object):
 
         res = res.json()[self.TIME_SERIES_DAILY_FIELD]
         for day in res.keys():
-            prices[day] = float(res[day][self.TIME_SERIES_PRICE_FIELD])
+            prices.append({
+                'date': day,
+                'price': float(res[day][self.TIME_SERIES_PRICE_FIELD])
+                })
+
+        prices = sorted(prices, key=lambda entry: entry['date'])
 
         logging.info("Got pricing information for %d days for stock %s", len(prices), stock_id)
+
         return prices

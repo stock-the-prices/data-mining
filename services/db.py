@@ -46,6 +46,34 @@ class DBConnection(ABC):
         # update record on DB
         pass
 
+    @abstractmethod
+    def update_rating(self, stock_id, rating: float):
+        # update record on DB
+        pass
+
+    @abstractmethod
+    def close(self):
+        # close connection
+        pass
+
+    @abstractmethod
+    def get_stock_articles(self, stock_id: str):
+        pass
+
+    @abstractmethod
+    def get_last_price_and_date(self, stock_id: str):
+        pass
+
+    @abstractmethod
+    def get_price_next_day(self, stock_id: str):
+        pass
+
+    @abstractmethod
+    def get_price_next_week(self, stock_id: str):
+        pass
+
+
+
 class MongoDBConnection(DBConnection):
     """
     Facade for MongoDB client.
@@ -77,22 +105,66 @@ class MongoDBConnection(DBConnection):
             # might fail if user but no pass
             self.db = self.client[self.dbName]
 
+    def close(self):
+        # close connection
+        if not self.client: return
+        self.client.close()
+        self.client = None
+        self.db = None
+
+    def get_stock_articles(self, stock_id: str):
+        if not self.client: return None
+        articles = []
+        stock_query = {'_id': stock_id}
+        a_ids = self.db.stock.find_one(stock_query, {'articles': 1})
+        if a_ids is None: return None
+        a_ids = a_ids['articles']
+        for a_id in a_ids:
+            articles.append(self.db.article.find_one({'_id': a_id}))
+        return articles
+
+    def get_last_price_and_date(self, stock_id: str):
+        if not self.client: return None
+        stock_query = {'_id': stock_id}
+        last_price_and_date = self.db.stock.find_one(stock_query, {"prices": {"$slice": -1}})
+        if last_price_and_date is None: return None
+        last_price_and_date = last_price_and_date['prices'][0]
+        return last_price_and_date
+
+    def get_price_next_day(self, stock_id: str):
+        if not self.client: return None
+        stock_query = {'_id': stock_id}
+        price_next_day = self.db.stock.find_one(stock_query, {'price_next_day': 1})
+        if price_next_day is None: return None
+        price_next_day = price_next_day['price_next_day']
+        return price_next_day
+
+    def get_price_next_week(self, stock_id: str):
+        if not self.client: return None
+        stock_query = {'_id': stock_id}
+        price_next_week = self.db.stock.find_one(stock_query, {'price_next_week': 1})
+        if price_next_week is None: return None
+        price_next_week = price_next_week['price_next_week']
+        return price_next_week
 
     def insert_new_stock(self, stock_id: str):
         # schema
+        if not self.client: return
         new_stock = {
-            "_id" : stock_id,
-	        "date_updated" : datetime.datetime.utcnow(),
-	        "articles" : [],
-            "prices" : {},
-            "price_next_day" : None,
-            "price_next_week" : None
+            "_id": stock_id,
+	        "date_updated": datetime.datetime.utcnow(),
+	        "articles": [],
+            "prices": [],
+            "price_next_day": None,
+            "price_next_week": None,
+            "rating": None
         }
         logging.warning("Inserted new stock record for %s", stock_id)
 
         return self.db.stock.insert_one(new_stock).inserted_id
 
     def get_record(self, stock_id):
+        if not self.client: return
         stock_query = {"_id": stock_id}
         record = self.db.stock.find_one(stock_query)
         return record
@@ -100,6 +172,7 @@ class MongoDBConnection(DBConnection):
     def update_pricing(self, stock_id, historical_prices=None,
                        price_next_day=None,
                        price_next_week=None):
+        if not self.client: return
 
         stocks = self.db.stock
         stock_query = {"_id": stock_id}
@@ -128,6 +201,8 @@ class MongoDBConnection(DBConnection):
         # update record on DB with articles
         # article DNE: create article document -> insert into stock document
         # OR article exists: if article linked to stock -> do nothing ELSE link to stock
+
+        if not self.client: return
 
         stocks = self.db.stock
         articles = self.db.article
@@ -163,3 +238,16 @@ class MongoDBConnection(DBConnection):
         # update stock updated time
         stocks.update_one(stock_query, {'$set': {"date_updated": datetime.datetime.utcnow()}})
         logging.info("Updated articles of stock: %s", stock_id)
+
+    def update_rating(self, stock_id: str, rating: float):
+        if not self.client: return
+
+        stock_query = {"_id": stock_id}
+
+        record = self.get_record(stock_id)
+        if record is None:
+            # insert stock if necessary
+            self.insert_new_stock(stock_id)
+
+        self.db.stock.update_one(stock_query, {'$set': {"rating": rating}})
+        logging.info("Updated rating of stock %s to %f", stock_id, rating)

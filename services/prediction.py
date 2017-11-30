@@ -20,9 +20,15 @@ class Prediction(object):
     def __init__(self):
         pass
 
-    def setup(self, prices: dict):
-        # create a regression based on the prices
-        self.sorted_prices = sorted([(day, prices[day]) for day in prices.keys()], key=lambda d: d[0])
+    def seed(self, prices: list):
+        # seed predictor with sorted data
+        for i in range(1, len(prices)):
+            if prices[i]['date'] <= prices[i-1]['date']:
+                # not sorted, so sort
+                prices = sorted(prices, key=lambda entry: entry['date'])
+                break
+
+        self.sorted_prices = prices
 
     def create_regression(self, num_points):
         # create regression based on # points
@@ -30,7 +36,7 @@ class Prediction(object):
             return None
 
         x = [i for i in range(num_points)]
-        y = [self.sorted_prices[-i][1] for i in range(num_points, 0, -1)]
+        y = [self.sorted_prices[-i]['price'] for i in range(num_points, 0, -1)]
 
         x = np.array(x)
         y = np.array(y)
