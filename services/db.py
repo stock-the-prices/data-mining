@@ -25,24 +25,26 @@ class DBConnection(ABC):
         pass
 
     @abstractmethod
-    def update_record(self, stock: str):
+    def get_record(self, stock_id: str):
+        # get stock record
+        pass
+
+    @abstractmethod
+    def insert_new_stock(self, stock_id: str):
+        # insert new stock
+        pass
+
+    @abstractmethod
+    def update_pricing(self, stock_id, historical_prices,
+                       price_next_day,
+                       price_next_week):
         # update record on DB
         pass
 
-# class DBConnectionFactory(ABC):
-#     """ Abstract factory to create DBConnection. Decoupled from the instantiation of DBConnection. """
-#     __metaclass__ = ABCMeta
-
-#     # Creates DBConnectionFactory by setting up common fields
-#     def __init__(self, host: str, port: int):
-#         self.host = host
-#         self.port = port
-#         super().__init__()
-
-#     @abstractmethod
-#     def create(self) -> DBConnection:
-#         # create db client
-#         pass
+    @abstractmethod
+    def update_articles(self, stock_id, articles):
+        # update record on DB
+        pass
 
 class MongoDBConnection(DBConnection):
     """
@@ -84,60 +86,80 @@ class MongoDBConnection(DBConnection):
 	        "articles" : [],
             "prices" : {},
             "price_next_day" : None,
-            "price_next_week" : None,
-            "price_next_month" : None
+            "price_next_week" : None
         }
+        logging.warning("Inserted new stock record for %s", stock_id)
 
         return self.db.stock.insert_one(new_stock).inserted_id
 
+    def get_record(self, stock_id):
+        stock_query = {"_id": stock_id}
+        record = self.db.stock.find_one(stock_query)
+        return record
 
-    def update_record(self, stock_id: str, new_articles=None, new_pricing=None):
+    def update_pricing(self, stock_id, historical_prices=None,
+                       price_next_day=None,
+                       price_next_week=None):
+
+        stocks = self.db.stock
+        stock_query = {"_id": stock_id}
+
+        if self.get_record(stock_id) is None:
+            self.insert_new_stock(stock_id)
+
+        # update pricing
+        if historical_prices is not None:
+            stocks.update_one(stock_query, {'$set': {'prices': historical_prices}})
+            logging.info("Updated stock %s record with historical pricing information", stock_id)
+
+        if price_next_day is not None:
+            stocks.update_one(stock_query, {'$set': {'price_next_day': price_next_day}})
+            logging.info("Updated stock %s record with tomorrow's price", stock_id)
+
+        if price_next_week is not None:
+            stocks.update_one(stock_query, {'$set': {'price_next_week': price_next_week}})
+            logging.info("Updated stock %s record with next week's price", stock_id)
+
+        # update stock updated time
+        stocks.update_one(stock_query, {'$set': {"date_updated": datetime.datetime.utcnow()}})
+        logging.info("Updated pricing of stock: %s", stock_id)
+
+    def update_articles(self, stock_id: str, new_articles):
         # update record on DB with articles
         # article DNE: create article document -> insert into stock document
         # OR article exists: if article linked to stock -> do nothing ELSE link to stock
 
         stocks = self.db.stock
         articles = self.db.article
-
         stock_query = {"_id": stock_id}
-        record = stocks.find_one(stock_query)
 
-        # insert stock if necessary
+        record = self.get_record(stock_id)
         if record is None:
+            # insert stock if necessary
             self.insert_new_stock(stock_id)
-            logging.warning("Inserted new stock record for %s", stock_id)
-            record = stocks.find_one(stock_query)
+            record = self.get_record(stock_id)
 
-        if new_articles is not None:
-            # update articles
-            for art in new_articles:
-                logging.info("Processing article: %s", art['title'])
-                article_record = articles.find_one({"title": art['title']})
-                if article_record is None:
-                    # new article
-                    a_id = articles.insert_one(art).inserted_id
-                    logging.info("Inserted new article: %s", art['title'])
-                else:
-                    # old article
-                    a_id = article_record['_id']
+        # update articles
+        for art in new_articles:
+            logging.info("Processing article: %s", art['title'])
+            article_record = articles.find_one({"title": art['title']})
+            if article_record is None:
+                # new article
+                a_id = articles.insert_one(art).inserted_id
+                logging.info("Inserted new article: %s", art['title'])
+            else:
+                # old article
+                a_id = article_record['_id']
 
-                    record = stocks.find_one(stock_query)
-                    if a_id in record['articles']:
-                        # article already in stock record
-                        continue
+                record = self.get_record(stock_id)
 
-                stocks.update_one(stock_query, {'$push': {'articles': a_id}})
-                logging.info("Updated stock %s record with article: %s", stock_id, art['title'])
+                if a_id in record['articles']:
+                    # article already in stock record
+                    continue
 
-        # update pricing
-        if new_pricing is not None:
-            stocks.update_one(stock_query, {'$set': {'prices': new_pricing}})
-            logging.info("Updated stock %s record with new pricing information")
+            stocks.update_one(stock_query, {'$push': {'articles': a_id}})
+            logging.info("Updated stock %s record with article: %s", stock_id, art['title'])
 
         # update stock updated time
         stocks.update_one(stock_query, {'$set': {"date_updated": datetime.datetime.utcnow()}})
-
-        updated_stock = stocks.find_one(stock_query)
-        logging.info("Updated stock:\n%s", pprint.pformat(updated_stock, 4))
-
-        return updated_stock
+        logging.info("Updated articles of stock: %s", stock_id)

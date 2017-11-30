@@ -8,6 +8,7 @@ from services.db import DBConnection, MongoDBConnection
 from services.news import News
 from services.sentiment import Sentiment
 from services.price import Price
+from services.prediction import Prediction
 
 import pprint
 import logging
@@ -71,13 +72,17 @@ def configure(binder: Binder) -> Binder:
         Price(CONFIG['external']['price']['apiKey'],
              CONFIG['external']['price']['host']))
 
+    # Prediction
+    binder.bind(                # bind(interface, implementation)
+        Prediction,
+        Prediction())
+
 def main():
     configure_logger()
     load_config()
     app = connexion.FlaskApp(__name__,
                              port=CONFIG['server']['port'],
-                             specification_dir=SWAGGER_PATH
-                            )
+                             specification_dir=SWAGGER_PATH)
 
     app.add_api('openapi.json', resolver=RestyResolver('api')) # ('api_spec_file','api_defn_folder')
 

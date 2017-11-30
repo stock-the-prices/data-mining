@@ -3,4 +3,4 @@ connexion
 Flask-Injector
 pymongo
 requests
-
+numpy

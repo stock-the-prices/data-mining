@@ -5,7 +5,7 @@ services:
     app:
         build: .
         environment:
-            - DEPLOY_MODE=dev
+            - DEPLOY_MODE=prod
         volumes:
             - .:/code
         depends_on:
@@ -13,7 +13,7 @@ services:
         ports:
             # maps container port to host port (VM), which maps to some port on your mac
             - "9090:9090"
-        
+
     mongodb:
         image: mongo:latest
         command: --smallfiles
