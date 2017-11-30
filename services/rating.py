@@ -49,4 +49,4 @@ class Rating(object):
 
         self.db_connection.close()
 
-        return (avg_sentiment_rating + avg_price_rating)/2
+        return (avg_sentiment_rating*0.8 + avg_price_rating*0.2)/(0.8 + 0.2)
