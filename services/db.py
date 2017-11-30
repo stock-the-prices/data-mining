@@ -249,5 +249,5 @@ class MongoDBConnection(DBConnection):
             # insert stock if necessary
             self.insert_new_stock(stock_id)
 
-        self.db.stock.update_one(stock_query, {'$set': {"rating": rating}})
+        self.db.stock.update_one(stock_query, {'$set': {'rating': rating}})
         logging.info("Updated rating of stock %s to %f", stock_id, rating)

@@ -20,7 +20,7 @@ class Rating(object):
         total_neg = 0.0
         total_pos = 0.0
         for article in articles:
-            total_neg = total_neg - article['sentiment']['probability']['neg']
+            total_neg = total_neg - max(1.0, 1.5 * article['sentiment']['probability']['neg'])
             total_pos = total_pos + article['sentiment']['probability']['pos']
 
         avg_sentiment_rating = (total_neg + total_pos)/len(articles)
